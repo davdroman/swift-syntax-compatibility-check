@@ -13,6 +13,11 @@ inputs:
     required: false
     default: 'false'
 
+  from-version:
+    description: 'Check starting from this swift-syntax version (e.g. 510.0.0); empty means all selected versions'
+    required: false
+    default: ''
+
   verbose:
     description: 'Whether to use verbose output for Swift commands (true/false)'
     required: false
@@ -24,20 +29,22 @@ runs:
     - name: Run Swift Macro Compatibility Check Script
       shell: bash
       run: |
-        # Pass input values to the script
-        ARGS=""
+        args=()
         if [ "${{ inputs.run-tests }}" = "true" ]; then
-          ARGS="$ARGS --run-tests"
+          args+=(--run-tests)
         fi
         if [ "${{ inputs.major-versions-only }}" = "true" ]; then
-          ARGS="$ARGS --major-versions-only"
+          args+=(--major-versions-only)
+        fi
+        from_version="${{ inputs.from-version }}"
+        if [ -n "$from_version" ]; then
+          args+=(--from-version "$from_version")
         fi
         if [ "${{ inputs.verbose }}" = "true" ]; then
-          ARGS="$ARGS --verbose"
+          args+=(--verbose)
         fi
 
-        # Execute the external script with the arguments
-        bash ${{ github.action_path }}/swift-macro-compatibility-check.sh $ARGS
+        bash "${{ github.action_path }}/swift-macro-compatibility-check.sh" "${args[@]}"
 
 branding:
   icon: 'check-circle'

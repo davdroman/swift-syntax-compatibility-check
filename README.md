@@ -49,6 +49,7 @@ jobs:
 |-----------------------|---------------------------------------------------------------|----------|---------|
 | `run-tests`           | Whether to run tests (true/false)                             | false    | false   |
 | `major-versions-only` | Whether to test only against major versions (true/false)      | false    | false   |
+| `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0) | false    |         |
 | `verbose`             | Whether to use verbose output for Swift commands (true/false) | false    | false   |
 
 ## `swift-syntax` Versions
@@ -71,6 +72,8 @@ The action tests against the following `swift-syntax` versions:
 
 When `major-versions-only` is set to `true`, only versions `509.0.0`, `510.0.0`, `600.0.0`, and `601.0.1` are tested.
 
+When `from-version` is set, versions older than it are skipped (after applying `major-versions-only`, if enabled).
+
 ## Running the Script Locally
 
 If you'd like to run the compatibility check script locally without GitHub Actions, you can do so by executing the provided bash script [`swift-macro-compatibility-check.sh`](swift-macro-compatibility-check.sh) in your terminal.
@@ -78,7 +81,7 @@ If you'd like to run the compatibility check script locally without GitHub Actio
 ### Usage
 
 ```bash
-./swift-macro-compatibility-check.sh [--run-tests] [--major-versions-only] [--verbose]
+./swift-macro-compatibility-check.sh [--run-tests] [--major-versions-only] [--from-version <version>] [--verbose]
 ```
 
 ### Script Overview
@@ -127,6 +130,7 @@ jobs:
         with:
           run-tests: 'true'
           major-versions-only: 'false'
+          from-version: '510.0.0'
           verbose: 'true'
 ```
 
