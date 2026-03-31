@@ -10,8 +10,8 @@ This is a GitHub Action that tests Swift packages with macros for compatibility 
 
 - `action.yml`: GitHub Action definition with inputs for run-tests, major-versions-only, and verbose flags
 - `swift-macro-compatibility-check.sh`: Core bash script that tests against multiple `swift-syntax` versions
-- The script tests against versions: 509.0.0, 509.0.1, 509.0.2, 509.1.0, 509.1.1, 510.0.0, 510.0.1, 510.0.2, 510.0.3, 600.0.0, 600.0.1
-- Major versions only mode tests: 509.0.0, 510.0.0, 600.0.0
+- The script tests against versions: 509.0.0, 509.0.1, 509.0.2, 509.1.0, 509.1.1, 510.0.0, 510.0.1, 510.0.2, 510.0.3, 600.0.0, 600.0.1, 601.0.1, 602.0.0, 603.0.0
+- Major versions only mode tests: 509.0.0, 510.0.0, 600.0.0, 601.0.1, 602.0.0, 603.0.0
 
 ## Development Commands
 

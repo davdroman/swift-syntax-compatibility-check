@@ -69,8 +69,10 @@ The action tests against the following `swift-syntax` versions:
 - `600.0.1`
 <!--- `601.0.0`-->
 - `601.0.1`
+- `602.0.0`
+- `603.0.0`
 
-When `major-versions-only` is set to `true`, only versions `509.0.0`, `510.0.0`, `600.0.0`, and `601.0.1` are tested.
+When `major-versions-only` is set to `true`, only versions `509.0.0`, `510.0.0`, `600.0.0`, `601.0.1`, `602.0.0`, and `603.0.0` are tested.
 
 When `from-version` is set, versions older than it are skipped (after applying `major-versions-only`, if enabled).
 

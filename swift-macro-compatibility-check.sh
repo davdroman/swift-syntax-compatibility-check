@@ -71,6 +71,8 @@ ALL_VERSIONS=(
   "600.0.1"
 #  "601.0.0" Apple has forgoten to add SwiftSyntax601 marker module to this version...
   "601.0.1"
+  "602.0.0"
+  "603.0.0"
 )
 
 # List of major swift-syntax versions
@@ -79,6 +81,8 @@ MAJOR_VERSIONS=(
   "510.0.0"
   "600.0.0"
   "601.0.1" # Apple has forgoten to add SwiftSyntax601 marker module to the 601.0.0 version...
+  "602.0.0"
+  "603.0.0"
 )
 
 # Choose which versions to use based on input
