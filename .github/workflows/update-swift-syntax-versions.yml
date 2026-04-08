@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Compute tracked swift-syntax versions
         id: check-releases
@@ -119,6 +119,40 @@ jobs:
           STABLE_VERSIONS="${{ steps.check-releases.outputs.stable_versions }}"
           PRERELEASE_VERSIONS="${{ steps.check-releases.outputs.prerelease_versions }}"
 
+          build_major_stable_versions() {
+            local current_major=""
+            local major_stable_versions=""
+            local version major
+
+            while IFS= read -r version; do
+              [ -z "$version" ] && continue
+
+              major="${version%%.*}"
+              if [ "$major" != "$current_major" ]; then
+                major_stable_versions="${major_stable_versions}${version}"$'\n'
+                current_major="$major"
+              fi
+            done <<< "$STABLE_VERSIONS"
+
+            printf '%s' "$major_stable_versions" | awk 'NF'
+          }
+
+          format_bullets() {
+            local versions="$1"
+
+            if [ -z "$versions" ]; then
+              printf '%s\n' '- (none)'
+              return
+            fi
+
+            while IFS= read -r version; do
+              [ -z "$version" ] && continue
+              printf -- '- `%s`\n' "$version"
+            done <<< "$versions"
+          }
+
+          MAJOR_STABLE_VERSIONS=$(build_major_stable_versions)
+
           cp swift-syntax-compatibility-check.sh swift-syntax-compatibility-check.sh.bak
 
           awk -v stable_versions="$STABLE_VERSIONS" -v prerelease_versions="$PRERELEASE_VERSIONS" '
@@ -155,6 +189,34 @@ jobs:
 
           rm swift-syntax-compatibility-check.sh.bak
 
+          {
+            printf '%s\n' '<!-- BEGIN GENERATED VERSION MATRIX -->'
+            printf '%s\n' '### Tracked stable releases'
+            format_bullets "$STABLE_VERSIONS"
+            printf '\n%s\n' '### Tracked prereleases'
+            format_bullets "$PRERELEASE_VERSIONS"
+            printf '\n%s\n' '### `major-versions-only` matrix'
+            format_bullets "$(printf '%s\n%s\n' "$MAJOR_STABLE_VERSIONS" "$PRERELEASE_VERSIONS" | awk 'NF')"
+            printf '%s\n' '<!-- END GENERATED VERSION MATRIX -->'
+          } > README.version-matrix.generated
+
+          awk '
+            /<!-- BEGIN GENERATED VERSION MATRIX -->/ {
+              system("cat README.version-matrix.generated")
+              skipping = 1
+              next
+            }
+
+            /<!-- END GENERATED VERSION MATRIX -->/ {
+              skipping = 0
+              next
+            }
+
+            !skipping { print }
+          ' README.md > README.md.tmp
+          mv README.md.tmp README.md
+          rm README.version-matrix.generated
+
       - name: Create pull request
         if: steps.check-releases.outputs.versions_changed == 'true'
         uses: peter-evans/create-pull-request@v6
@@ -166,6 +228,7 @@ jobs:
             ## Summary
             - refresh the stable `swift-syntax` release list from upstream
             - track the latest prerelease head for each unreleased major
+            - refresh the generated README version matrix
 
             ## Stable versions
             ${{ steps.check-releases.outputs.stable_versions }}

@@ -40,7 +40,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Run Swift Syntax Compatibility Check
         uses: davdroman/swift-syntax-compatibility-check@main
 ```
@@ -56,14 +56,37 @@ jobs:
 
 ## `swift-syntax` Versions
 
-The action tracks two version sets by default:
+The action tracks stable releases plus the latest prerelease head for each unreleased major by default.
 
-- stable `swift-syntax` releases from `509.x` tracked in the script
-- the latest prerelease head for each unreleased major, so CI gets an early compatibility signal before the stable release lands
+<!-- BEGIN GENERATED VERSION MATRIX -->
+### Tracked stable releases
+- `509.0.0`
+- `509.0.1`
+- `509.0.2`
+- `509.1.0`
+- `509.1.1`
+- `510.0.0`
+- `510.0.1`
+- `510.0.2`
+- `510.0.3`
+- `600.0.0`
+- `600.0.1`
+- `601.0.1`
+- `602.0.0`
+- `603.0.0`
 
-See [`swift-syntax-compatibility-check.sh`](swift-syntax-compatibility-check.sh) for the exact current tracked versions.
+### Tracked prereleases
+- `604.0.0-prerelease-2026-03-31`
 
-When `major-versions-only` is set to `true`, the action tests one stable representative per major line (for example `601.0.1` for the `601` line) plus the tracked prerelease heads.
+### `major-versions-only` matrix
+- `509.0.0`
+- `510.0.0`
+- `600.0.0`
+- `601.0.1`
+- `602.0.0`
+- `603.0.0`
+- `604.0.0-prerelease-2026-03-31`
+<!-- END GENERATED VERSION MATRIX -->
 
 When `from-version` is set, versions older than it are skipped after the base matrix is selected. This filter accepts both stable and prerelease tags.
 
@@ -99,8 +122,8 @@ jobs:
   check-compatibility:
     runs-on: macos-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Git Checkout
+        uses: actions/checkout@v5
       - name: Run Swift Syntax Compatibility Check
         uses: davdroman/swift-syntax-compatibility-check@main
 ```
@@ -116,8 +139,8 @@ jobs:
   check-compatibility:
     runs-on: macos-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Git Checkout
+        uses: actions/checkout@v5
       - name: Run Swift Syntax Compatibility Check
         uses: davdroman/swift-syntax-compatibility-check@main
         with:
