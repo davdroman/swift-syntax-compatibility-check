@@ -130,12 +130,6 @@ done
 
 # Stable swift-syntax versions to check.
 STABLE_VERSIONS=(
-  "509.0.0"
-  "509.0.1"
-  "509.0.2"
-  "509.1.0"
-  "509.1.1"
-  "510.0.0"
   "510.0.1"
   "510.0.2"
   "510.0.3"
