@@ -28,7 +28,7 @@ To use this action in your workflow, add the following step:
 
 ```yaml
 - name: Run Swift Syntax Compatibility Check
-  uses: davdroman/swift-syntax-compatibility-check@main
+  uses: davdroman/swift-syntax-compatibility-check@v1
 ```
 
 > [!IMPORTANT]
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
       - name: Run Swift Syntax Compatibility Check
-        uses: davdroman/swift-syntax-compatibility-check@main
+        uses: davdroman/swift-syntax-compatibility-check@v1
 ```
 
 ## Inputs
@@ -136,7 +136,7 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v5
       - name: Run Swift Syntax Compatibility Check
-        uses: davdroman/swift-syntax-compatibility-check@main
+        uses: davdroman/swift-syntax-compatibility-check@v1
 ```
 
 ### With All Options
@@ -153,7 +153,7 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v5
       - name: Run Swift Syntax Compatibility Check
-        uses: davdroman/swift-syntax-compatibility-check@main
+        uses: davdroman/swift-syntax-compatibility-check@v1
         with:
           run-tests: true
           major-versions-only: false
