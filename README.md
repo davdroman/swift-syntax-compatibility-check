@@ -1,6 +1,6 @@
 # Swift Syntax Compatibility Check
 
-This GitHub Action verifies compatibility of a Swift package that depends on `swift-syntax` against multiple `swift-syntax` versions.
+This GitHub Action verifies compatibility of a Swift package that depends on `swift-syntax` across multiple relevant versions.
 
 ## Motivation
 
