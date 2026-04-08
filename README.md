@@ -52,12 +52,12 @@ jobs:
 | `run-tests`           | Whether to run tests (true/false)                             | false    | false   |
 | `major-versions-only` | Whether to test only against major versions (true/false)      | false    | false   |
 | `include-prereleases` | Whether to also test tracked `swift-syntax` prereleases       | false    | false   |
-| `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31) | false    |         |
+| `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31). If omitted, infer from the manifest when possible. | false    |         |
 | `verbose`             | Whether to use verbose output for Swift commands (true/false) | false    | false   |
 
 ## `swift-syntax` Versions
 
-The action tracks stable releases by default. Prereleases are available as an explicit opt-in via `include-prereleases: 'true'`.
+The action tracks stable releases by default. Prereleases are available as an explicit opt-in via `include-prereleases: true`.
 
 For background on why prereleases are opt-in under SwiftPM, see:
 
@@ -95,9 +95,11 @@ For background on why prereleases are opt-in under SwiftPM, see:
 - `603.0.0`
 <!-- END GENERATED VERSION MATRIX -->
 
-Set `include-prereleases: 'true'` to append the tracked prereleases to either the full matrix or the `major-versions-only` matrix.
+Set `include-prereleases: true` to append the tracked prereleases to either the full matrix or the `major-versions-only` matrix.
 
-When `from-version` is set, versions older than it are skipped after the base matrix is selected. Prerelease `from-version` values require `include-prereleases: 'true'`.
+When `from-version` is omitted, the action tries to infer the direct `swift-syntax` lower bound from `Package.swift` via `swift package dump-package`. If inference fails, it falls back to all selected versions.
+
+When `from-version` is set, versions older than it are skipped after the base matrix is selected. Prerelease `from-version` values require `include-prereleases: true` unless the prerelease lower bound was inferred from the manifest.
 
 ## Running the Script Locally
 
@@ -153,11 +155,11 @@ jobs:
       - name: Run Swift Syntax Compatibility Check
         uses: davdroman/swift-syntax-compatibility-check@main
         with:
-          run-tests: 'true'
-          major-versions-only: 'false'
-          include-prereleases: 'true'
+          run-tests: true
+          major-versions-only: false
+          include-prereleases: true
           from-version: '510.0.0'
-          verbose: 'true'
+          verbose: true
 ```
 
 ## Contributing

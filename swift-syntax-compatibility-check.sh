@@ -11,6 +11,7 @@ INCLUDE_PRERELEASES=false
 FROM_VERSION=""
 VERBOSE=false
 FAILURE_OCCURRED=false
+FROM_VERSION_INFERRED=false
 
 # Validate version format (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31)
 function is_valid_version() {
@@ -110,6 +111,44 @@ function build_major_stable_versions() {
   done
 }
 
+function infer_from_version_from_manifest() {
+  if ! command -v jq >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local dump_package_output
+  if ! dump_package_output="$(swift package dump-package 2>/dev/null)"; then
+    return 1
+  fi
+
+  local inferred_version
+  inferred_version="$({
+    printf '%s\n' "$dump_package_output"
+  } | jq -r '
+    [
+      .dependencies[]
+      | .sourceControl[]?
+      | select(
+          .identity == "swift-syntax"
+          or any(.location.remote[]?; .urlString == "https://github.com/swiftlang/swift-syntax")
+        )
+      | .requirement
+      | if has("range") then .range[0].lowerBound
+        elif has("exact") then .exact[0]
+        else empty
+        end
+    ]
+    | unique
+    | .[0] // empty
+  ' 2>/dev/null)"
+
+  if [ -z "$inferred_version" ] || ! is_valid_version "$inferred_version"; then
+    return 1
+  fi
+
+  printf '%s\n' "$inferred_version"
+}
+
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -167,6 +206,13 @@ if [ "$INCLUDE_PRERELEASES" = true ]; then
   VERSIONS=("${VERSIONS[@]}" "${PRERELEASE_VERSIONS[@]}")
 fi
 
+if [ -z "$FROM_VERSION" ]; then
+  if INFERRED_FROM_VERSION_VALUE="$(infer_from_version_from_manifest)"; then
+    FROM_VERSION="$INFERRED_FROM_VERSION_VALUE"
+    FROM_VERSION_INFERRED=true
+  fi
+fi
+
 if [ -n "$FROM_VERSION" ]; then
   if ! is_valid_version "$FROM_VERSION"; then
     echo "Invalid --from-version '$FROM_VERSION' (expected format: 510.0.0 or 604.0.0-prerelease-2026-03-31)" >&2
@@ -174,8 +220,13 @@ if [ -n "$FROM_VERSION" ]; then
   fi
 
   if is_prerelease_version "$FROM_VERSION" && [ "$INCLUDE_PRERELEASES" != true ]; then
-    echo "Prerelease from-version '$FROM_VERSION' requires --include-prereleases" >&2
-    exit 2
+    if [ "$FROM_VERSION_INFERRED" = true ]; then
+      INCLUDE_PRERELEASES=true
+      VERSIONS=("${VERSIONS[@]}" "${PRERELEASE_VERSIONS[@]}")
+    else
+      echo "Prerelease from-version '$FROM_VERSION' requires --include-prereleases" >&2
+      exit 2
+    fi
   fi
 
   FILTERED_VERSIONS=()

@@ -8,10 +8,11 @@ This is a GitHub Action that tests Swift packages that depend on `swift-syntax` 
 
 ## Architecture
 
-- `action.yml`: GitHub Action definition with inputs for run-tests, major-versions-only, include-prereleases, and verbose flags
+- `action.yml`: GitHub Action definition with inputs for run-tests, major-versions-only, include-prereleases, from-version, and verbose flags
 - `swift-syntax-compatibility-check.sh`: Core bash script that tests against multiple `swift-syntax` versions
 - The script tracks stable releases from 509 onward, and tracks prerelease heads separately for opt-in checks
 - Major versions only mode derives one stable representative per major line; prerelease heads are only appended when explicitly requested
+- If `from-version` is omitted, the script tries to infer the direct `swift-syntax` lower bound from `swift package dump-package`
 
 ## Development Commands
 
