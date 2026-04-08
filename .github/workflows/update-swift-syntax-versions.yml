@@ -28,7 +28,7 @@ jobs:
         OFFICIAL_RELEASES=$(echo "$RELEASES" | grep -E '^[0-9]{3}\.[0-9]+\.[0-9]+$' | awk -F. '$1 >= 509 { print }' | sort -V)
         
         # Read current versions from script
-        CURRENT_VERSIONS=$(grep -A 20 "ALL_VERSIONS=(" swift-macro-compatibility-check.sh | grep -o '"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"' | tr -d '"' | sort -V)
+        CURRENT_VERSIONS=$(grep -A 20 "ALL_VERSIONS=(" swift-syntax-compatibility-check.sh | grep -o '"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"' | tr -d '"' | sort -V)
         
         # Find new versions (only versions >= 509.0.0, excluding 601.0.0)
         NEW_VERSIONS=""
@@ -56,10 +56,10 @@ jobs:
         NEW_VERSIONS="${{ steps.check-releases.outputs.versions }}"
         
         # Create backup
-        cp swift-macro-compatibility-check.sh swift-macro-compatibility-check.sh.bak
+        cp swift-syntax-compatibility-check.sh swift-syntax-compatibility-check.sh.bak
         
         # Read current ALL_VERSIONS array
-        CURRENT_VERSIONS=$(grep -A 20 "ALL_VERSIONS=(" swift-macro-compatibility-check.sh | grep -o '"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"' | tr -d '"')
+        CURRENT_VERSIONS=$(grep -A 20 "ALL_VERSIONS=(" swift-syntax-compatibility-check.sh | grep -o '"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"' | tr -d '"')
         
         # Combine and sort all versions
         ALL_VERSIONS=$(echo -e "$CURRENT_VERSIONS\n$NEW_VERSIONS" | sort -V | uniq)
@@ -86,7 +86,7 @@ jobs:
           next
         }
         { print }
-        ' swift-macro-compatibility-check.sh.bak > swift-macro-compatibility-check.sh
+        ' swift-syntax-compatibility-check.sh.bak > swift-syntax-compatibility-check.sh
         
         # Update MAJOR_VERSIONS if needed (major versions are x.0.0)
         MAJOR_VERSIONS=$(echo "$ALL_VERSIONS" | grep '\.0\.0$')
@@ -105,11 +105,11 @@ jobs:
             next
           }
           { print }
-          ' swift-macro-compatibility-check.sh > swift-macro-compatibility-check.sh.tmp
-          mv swift-macro-compatibility-check.sh.tmp swift-macro-compatibility-check.sh
+          ' swift-syntax-compatibility-check.sh > swift-syntax-compatibility-check.sh.tmp
+          mv swift-syntax-compatibility-check.sh.tmp swift-syntax-compatibility-check.sh
         fi
         
-        rm swift-macro-compatibility-check.sh.bak
+        rm swift-syntax-compatibility-check.sh.bak
         
     - name: Create Pull Request
       if: steps.check-releases.outputs.new_versions_found == 'true'
@@ -125,7 +125,7 @@ jobs:
           ${{ steps.check-releases.outputs.versions }}
           
           ### Changes made:
-          - Updated `ALL_VERSIONS` array in `swift-macro-compatibility-check.sh`
+          - Updated `ALL_VERSIONS` array in `swift-syntax-compatibility-check.sh`
           - Updated `MAJOR_VERSIONS` array if any new major versions (x.0.0) were added
           
           This PR was automatically created by the `update-swift-syntax-versions` workflow.

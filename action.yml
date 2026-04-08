@@ -1,6 +1,6 @@
-name: 'Swift Macro Compatibility Check'
+name: 'Swift Syntax Compatibility Check'
 
-description: 'Builds and optionally tests a Swift package with macros using all relevant swift-syntax versions'
+description: 'Builds and optionally tests a Swift package against multiple relevant swift-syntax versions'
 
 inputs:
   run-tests:
@@ -26,7 +26,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Run Swift Macro Compatibility Check Script
+    - name: Run Swift Syntax Compatibility Check Script
       shell: bash
       run: |
         args=()
@@ -44,7 +44,7 @@ runs:
           args+=(--verbose)
         fi
 
-        bash "${{ github.action_path }}/swift-macro-compatibility-check.sh" "${args[@]}"
+        bash "${{ github.action_path }}/swift-syntax-compatibility-check.sh" "${args[@]}"
 
 branding:
   icon: 'check-circle'

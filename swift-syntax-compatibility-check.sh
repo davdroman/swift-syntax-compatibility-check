@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Swift Macro Compatibility Check Script
+# Swift Syntax Compatibility Check Script
 # Usage:
-# ./swift-macro-compatibility-check.sh [--run-tests] [--major-versions-only] [--from-version <version>] [--verbose]
+# ./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--from-version <version>] [--verbose]
 
 # Default input values
 RUN_TESTS=false
