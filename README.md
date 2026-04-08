@@ -51,15 +51,23 @@ jobs:
 |-----------------------|---------------------------------------------------------------|----------|---------|
 | `run-tests`           | Whether to run tests (true/false)                             | false    | false   |
 | `major-versions-only` | Whether to test only against major versions (true/false)      | false    | false   |
+| `include-prereleases` | Whether to also test tracked `swift-syntax` prereleases       | false    | false   |
 | `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31) | false    |         |
 | `verbose`             | Whether to use verbose output for Swift commands (true/false) | false    | false   |
 
 ## `swift-syntax` Versions
 
-The action tracks stable releases plus the latest prerelease head for each unreleased major by default.
+The action tracks stable releases by default. Prereleases are available as an explicit opt-in via `include-prereleases: 'true'`.
+
+For background on why prereleases are opt-in under SwiftPM, see:
+
+- https://forums.swift.org/t/what-does-this-dependency-resolution-error-mean/72278/3
+- https://github.com/swiftlang/swift-package-manager/issues/7880
+- https://github.com/swiftlang/swift-package-manager/issues/7316
+- https://github.com/swiftlang/swift-package-manager/issues/7083
 
 <!-- BEGIN GENERATED VERSION MATRIX -->
-### Tracked stable releases
+### Default tracked stable releases
 - `509.0.0`
 - `509.0.1`
 - `509.0.2`
@@ -75,20 +83,21 @@ The action tracks stable releases plus the latest prerelease head for each unrel
 - `602.0.0`
 - `603.0.0`
 
-### Tracked prereleases
+### Optional tracked prereleases
 - `604.0.0-prerelease-2026-03-31`
 
-### `major-versions-only` matrix
+### Default `major-versions-only` matrix
 - `509.0.0`
 - `510.0.0`
 - `600.0.0`
 - `601.0.1`
 - `602.0.0`
 - `603.0.0`
-- `604.0.0-prerelease-2026-03-31`
 <!-- END GENERATED VERSION MATRIX -->
 
-When `from-version` is set, versions older than it are skipped after the base matrix is selected. This filter accepts both stable and prerelease tags.
+Set `include-prereleases: 'true'` to append the tracked prereleases to either the full matrix or the `major-versions-only` matrix.
+
+When `from-version` is set, versions older than it are skipped after the base matrix is selected. Prerelease `from-version` values require `include-prereleases: 'true'`.
 
 ## Running the Script Locally
 
@@ -97,7 +106,7 @@ If you'd like to run the compatibility check script locally without GitHub Actio
 ### Usage
 
 ```bash
-./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--from-version <version>] [--verbose]
+./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--from-version <version>] [--verbose]
 ```
 
 ### Script Overview
@@ -146,6 +155,7 @@ jobs:
         with:
           run-tests: 'true'
           major-versions-only: 'false'
+          include-prereleases: 'true'
           from-version: '510.0.0'
           verbose: 'true'
 ```

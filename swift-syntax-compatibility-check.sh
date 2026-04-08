@@ -2,11 +2,12 @@
 
 # Swift Syntax Compatibility Check Script
 # Usage:
-# ./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--from-version <version>] [--verbose]
+# ./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--from-version <version>] [--verbose]
 
 # Default input values
 RUN_TESTS=false
 MAJOR_VERSIONS_ONLY=false
+INCLUDE_PRERELEASES=false
 FROM_VERSION=""
 VERBOSE=false
 FAILURE_OCCURRED=false
@@ -114,6 +115,7 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         --run-tests) RUN_TESTS=true ;;
         --major-versions-only) MAJOR_VERSIONS_ONLY=true ;;
+        --include-prereleases) INCLUDE_PRERELEASES=true ;;
         --from-version)
           shift
           if [ -z "${1:-}" ]; then
@@ -146,8 +148,8 @@ STABLE_VERSIONS=(
   "603.0.0"
 )
 
-# Latest prerelease head for each unreleased major. Keeping these on by default
-# gives consumers an early warning before the next stable swift-syntax release.
+# Latest prerelease head for each unreleased major. These are opt-in because
+# most packages' normal dependency ranges do not admit prerelease versions.
 PRERELEASE_VERSIONS=(
   "604.0.0-prerelease-2026-03-31"
 )
@@ -160,11 +162,19 @@ if [ "$MAJOR_VERSIONS_ONLY" = true ]; then
 else
   VERSIONS=("${STABLE_VERSIONS[@]}")
 fi
-VERSIONS=("${VERSIONS[@]}" "${PRERELEASE_VERSIONS[@]}")
+
+if [ "$INCLUDE_PRERELEASES" = true ]; then
+  VERSIONS=("${VERSIONS[@]}" "${PRERELEASE_VERSIONS[@]}")
+fi
 
 if [ -n "$FROM_VERSION" ]; then
   if ! is_valid_version "$FROM_VERSION"; then
     echo "Invalid --from-version '$FROM_VERSION' (expected format: 510.0.0 or 604.0.0-prerelease-2026-03-31)" >&2
+    exit 2
+  fi
+
+  if is_prerelease_version "$FROM_VERSION" && [ "$INCLUDE_PRERELEASES" != true ]; then
+    echo "Prerelease from-version '$FROM_VERSION' requires --include-prereleases" >&2
     exit 2
   fi
 

@@ -13,6 +13,11 @@ inputs:
     required: false
     default: 'false'
 
+  include-prereleases:
+    description: 'Whether to also test tracked swift-syntax prereleases (true/false)'
+    required: false
+    default: 'false'
+
   from-version:
     description: 'Check starting from this swift-syntax version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31); empty means all selected versions'
     required: false
@@ -35,6 +40,9 @@ runs:
         fi
         if [ "${{ inputs.major-versions-only }}" = "true" ]; then
           args+=(--major-versions-only)
+        fi
+        if [ "${{ inputs.include-prereleases }}" = "true" ]; then
+          args+=(--include-prereleases)
         fi
         from_version="${{ inputs.from-version }}"
         if [ -n "$from_version" ]; then

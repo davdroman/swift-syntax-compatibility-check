@@ -8,16 +8,16 @@ This is a GitHub Action that tests Swift packages that depend on `swift-syntax` 
 
 ## Architecture
 
-- `action.yml`: GitHub Action definition with inputs for run-tests, major-versions-only, and verbose flags
+- `action.yml`: GitHub Action definition with inputs for run-tests, major-versions-only, include-prereleases, and verbose flags
 - `swift-syntax-compatibility-check.sh`: Core bash script that tests against multiple `swift-syntax` versions
-- The script tracks stable releases from 509 onward, plus the latest prerelease head for each unreleased major
-- Major versions only mode derives one stable representative per major line and still includes prerelease heads
+- The script tracks stable releases from 509 onward, and tracks prerelease heads separately for opt-in checks
+- Major versions only mode derives one stable representative per major line; prerelease heads are only appended when explicitly requested
 
 ## Development Commands
 
 ### Testing the Script Locally
 ```bash
-./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--verbose]
+./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--verbose]
 ```
 
 ### Script Workflow

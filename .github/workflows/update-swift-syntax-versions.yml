@@ -191,12 +191,12 @@ jobs:
 
           {
             printf '%s\n' '<!-- BEGIN GENERATED VERSION MATRIX -->'
-            printf '%s\n' '### Tracked stable releases'
+            printf '%s\n' '### Default tracked stable releases'
             format_bullets "$STABLE_VERSIONS"
-            printf '\n%s\n' '### Tracked prereleases'
+            printf '\n%s\n' '### Optional tracked prereleases'
             format_bullets "$PRERELEASE_VERSIONS"
-            printf '\n%s\n' '### `major-versions-only` matrix'
-            format_bullets "$(printf '%s\n%s\n' "$MAJOR_STABLE_VERSIONS" "$PRERELEASE_VERSIONS" | awk 'NF')"
+            printf '\n%s\n' '### Default `major-versions-only` matrix'
+            format_bullets "$MAJOR_STABLE_VERSIONS"
             printf '%s\n' '<!-- END GENERATED VERSION MATRIX -->'
           } > README.version-matrix.generated
 
