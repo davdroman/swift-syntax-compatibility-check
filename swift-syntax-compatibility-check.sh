@@ -11,20 +11,48 @@ FROM_VERSION=""
 VERBOSE=false
 FAILURE_OCCURRED=false
 
-# Validate version format (e.g. 510.0.0)
+# Validate version format (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31)
 function is_valid_version() {
   local v="$1"
-  [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+  [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-prerelease-[0-9]{4}-[0-9]{2}-[0-9]{2})?$ ]]
 }
 
-# Returns success if $1 >= $2 (dot-separated numeric)
+function is_prerelease_version() {
+  [[ "$1" == *-prerelease-* ]]
+}
+
+function version_core() {
+  printf '%s\n' "${1%%-prerelease-*}"
+}
+
+function version_major() {
+  local core
+  core="$(version_core "$1")"
+  printf '%s\n' "${core%%.*}"
+}
+
+function prerelease_date_key() {
+  if ! is_prerelease_version "$1"; then
+    printf '\n'
+    return
+  fi
+
+  local date="${1##*-prerelease-}"
+  printf '%s\n' "${date//-/}"
+}
+
+# Returns success if $1 >= $2 for stable and prerelease swift-syntax tags.
 function version_ge() {
   local a="$1"
   local b="$2"
 
+  local a_core b_core
+  a_core="$(version_core "$a")"
+  b_core="$(version_core "$b")"
+
   local a1 a2 a3 b1 b2 b3
-  IFS='.' read -r a1 a2 a3 <<< "$a"
-  IFS='.' read -r b1 b2 b3 <<< "$b"
+  IFS='.' read -r a1 a2 a3 <<< "$a_core"
+  IFS='.' read -r b1 b2 b3 <<< "$b_core"
 
   if (( a1 != b1 )); then
     (( a1 > b1 ))
@@ -34,7 +62,51 @@ function version_ge() {
     (( a2 > b2 ))
     return
   fi
-  (( a3 >= b3 ))
+  if (( a3 != b3 )); then
+    (( a3 > b3 ))
+    return
+  fi
+
+  local a_is_prerelease=false
+  local b_is_prerelease=false
+  if is_prerelease_version "$a"; then
+    a_is_prerelease=true
+  fi
+  if is_prerelease_version "$b"; then
+    b_is_prerelease=true
+  fi
+
+  if [ "$a_is_prerelease" = "$b_is_prerelease" ]; then
+    if [ "$a_is_prerelease" = false ]; then
+      return 0
+    fi
+
+    local a_date b_date
+    a_date="$(prerelease_date_key "$a")"
+    b_date="$(prerelease_date_key "$b")"
+    [[ "$a_date" > "$b_date" || "$a_date" = "$b_date" ]]
+    return
+  fi
+
+  if [ "$a_is_prerelease" = false ]; then
+    return 0
+  fi
+
+  return 1
+}
+
+function build_major_stable_versions() {
+  MAJOR_STABLE_VERSIONS=()
+
+  local current_major=""
+  local version major
+  for version in "${STABLE_VERSIONS[@]}"; do
+    major="$(version_major "$version")"
+    if [ "$major" != "$current_major" ]; then
+      MAJOR_STABLE_VERSIONS+=("$version")
+      current_major="$major"
+    fi
+  done
 }
 
 # Parse command line arguments
@@ -45,7 +117,7 @@ while [[ "$#" -gt 0 ]]; do
         --from-version)
           shift
           if [ -z "${1:-}" ]; then
-            echo "Missing value for --from-version (expected e.g. 510.0.0)" >&2
+            echo "Missing value for --from-version (expected e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31)" >&2
             exit 2
           fi
           FROM_VERSION="$1"
@@ -56,8 +128,8 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# List of all swift-syntax versions
-ALL_VERSIONS=(
+# Stable swift-syntax versions to check.
+STABLE_VERSIONS=(
   "509.0.0"
   "509.0.1"
   "509.0.2"
@@ -69,32 +141,30 @@ ALL_VERSIONS=(
   "510.0.3"
   "600.0.0"
   "600.0.1"
-#  "601.0.0" Apple has forgoten to add SwiftSyntax601 marker module to this version...
   "601.0.1"
   "602.0.0"
   "603.0.0"
 )
 
-# List of major swift-syntax versions
-MAJOR_VERSIONS=(
-  "509.0.0"
-  "510.0.0"
-  "600.0.0"
-  "601.0.1" # Apple has forgoten to add SwiftSyntax601 marker module to the 601.0.0 version...
-  "602.0.0"
-  "603.0.0"
+# Latest prerelease head for each unreleased major. Keeping these on by default
+# gives consumers an early warning before the next stable swift-syntax release.
+PRERELEASE_VERSIONS=(
+  "604.0.0-prerelease-2026-03-31"
 )
 
-# Choose which versions to use based on input
+build_major_stable_versions
+
+# Choose which versions to use based on input.
 if [ "$MAJOR_VERSIONS_ONLY" = true ]; then
-  VERSIONS=("${MAJOR_VERSIONS[@]}")
+  VERSIONS=("${MAJOR_STABLE_VERSIONS[@]}")
 else
-  VERSIONS=("${ALL_VERSIONS[@]}")
+  VERSIONS=("${STABLE_VERSIONS[@]}")
 fi
+VERSIONS=("${VERSIONS[@]}" "${PRERELEASE_VERSIONS[@]}")
 
 if [ -n "$FROM_VERSION" ]; then
   if ! is_valid_version "$FROM_VERSION"; then
-    echo "Invalid --from-version '$FROM_VERSION' (expected format: 510.0.0)" >&2
+    echo "Invalid --from-version '$FROM_VERSION' (expected format: 510.0.0 or 604.0.0-prerelease-2026-03-31)" >&2
     exit 2
   fi
 
@@ -145,6 +215,7 @@ function print_boxed_text() {
 
 # Loop over each SwiftSyntax version and check compatibility
 for version in "${VERSIONS[@]}"; do
+  VERSION_SUCCEEDED=false
   print_boxed_text "Checking compatibility with swift-syntax version $version"
   
   # Explain the resolve process
@@ -169,6 +240,7 @@ for version in "${VERSIONS[@]}"; do
       if swift test $VERBOSE_FLAG; then
         echo -e "${GREEN}Tests passed for swift-syntax $version${NC}"
         SUCCEEDED_VERSIONS+=("$version")
+        VERSION_SUCCEEDED=true
       else
         echo -e "${RED}Tests failed for swift-syntax $version${NC}"
         FAILED_VERSIONS+=("$version (Tests Failed)")
@@ -177,6 +249,7 @@ for version in "${VERSIONS[@]}"; do
     else
       echo -e "${YELLOW}Skipping tests as per configuration${NC}"
       SUCCEEDED_VERSIONS+=("$version")
+      VERSION_SUCCEEDED=true
     fi
   else
     echo -e "${RED}Build failed for swift-syntax $version${NC}"
@@ -185,7 +258,7 @@ for version in "${VERSIONS[@]}"; do
   fi
 
   # Conditional success/failure message
-  if [[ " ${SUCCEEDED_VERSIONS[@]} " =~ " ${version} " ]]; then
+  if [ "$VERSION_SUCCEEDED" = true ]; then
     echo -e "${GREEN}Compatibility check complete for swift-syntax $version${NC}"
   else
     echo -e "${RED}Compatibility check failed for swift-syntax $version${NC}"

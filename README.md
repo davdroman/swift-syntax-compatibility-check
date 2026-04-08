@@ -51,32 +51,21 @@ jobs:
 |-----------------------|---------------------------------------------------------------|----------|---------|
 | `run-tests`           | Whether to run tests (true/false)                             | false    | false   |
 | `major-versions-only` | Whether to test only against major versions (true/false)      | false    | false   |
-| `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0) | false    |         |
+| `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31) | false    |         |
 | `verbose`             | Whether to use verbose output for Swift commands (true/false) | false    | false   |
 
 ## `swift-syntax` Versions
 
-The action tests against the following `swift-syntax` versions:
+The action tracks two version sets by default:
 
-- `509.0.0`
-- `509.0.1`
-- `509.0.2`
-- `509.1.0`
-- `509.1.1`
-- `510.0.0`
-- `510.0.1`
-- `510.0.2`
-- `510.0.3`
-- `600.0.0`
-- `600.0.1`
-<!--- `601.0.0`-->
-- `601.0.1`
-- `602.0.0`
-- `603.0.0`
+- stable `swift-syntax` releases from `509.x` tracked in the script
+- the latest prerelease head for each unreleased major, so CI gets an early compatibility signal before the stable release lands
 
-When `major-versions-only` is set to `true`, only versions `509.0.0`, `510.0.0`, `600.0.0`, `601.0.1`, `602.0.0`, and `603.0.0` are tested.
+See [`swift-syntax-compatibility-check.sh`](swift-syntax-compatibility-check.sh) for the exact current tracked versions.
 
-When `from-version` is set, versions older than it are skipped (after applying `major-versions-only`, if enabled).
+When `major-versions-only` is set to `true`, the action tests one stable representative per major line (for example `601.0.1` for the `601` line) plus the tracked prerelease heads.
+
+When `from-version` is set, versions older than it are skipped after the base matrix is selected. This filter accepts both stable and prerelease tags.
 
 ## Running the Script Locally
 

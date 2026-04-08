@@ -2,9 +2,8 @@ name: Update Swift Syntax Versions
 
 on:
   schedule:
-    # Run daily at 6 AM UTC
     - cron: '0 6 * * *'
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,121 +12,167 @@ permissions:
 jobs:
   check-versions:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Check for new swift-syntax releases
-      id: check-releases
-      run: |
-        # Fetch releases from GitHub API
-        RELEASES=$(curl -s "https://api.github.com/repos/swiftlang/swift-syntax/releases" | jq -r '.[].tag_name')
-        
-        # Filter out prereleases and non-standard versions, only keep versions >= 509.0.0
-        OFFICIAL_RELEASES=$(echo "$RELEASES" | grep -E '^[0-9]{3}\.[0-9]+\.[0-9]+$' | awk -F. '$1 >= 509 { print }' | sort -V)
-        
-        # Read current versions from script
-        CURRENT_VERSIONS=$(grep -A 20 "ALL_VERSIONS=(" swift-syntax-compatibility-check.sh | grep -o '"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"' | tr -d '"' | sort -V)
-        
-        # Find new versions (only versions >= 509.0.0, excluding 601.0.0)
-        NEW_VERSIONS=""
-        for version in $OFFICIAL_RELEASES; do
-          if ! echo "$CURRENT_VERSIONS" | grep -q "^$version$"; then
-            # Double-check version is >= 509.0.0 and not 601.0.0 (Apple forgot SwiftSyntax601 marker module)
-            if echo "$version" | awk -F. '$1 >= 509 { exit 0 } { exit 1 }' && [ "$version" != "601.0.0" ]; then
-              NEW_VERSIONS="$NEW_VERSIONS $version"
-            fi
-          fi
-        done
-        
-        if [ -n "$NEW_VERSIONS" ]; then
-          echo "new_versions_found=true" >> $GITHUB_OUTPUT
-          echo "versions=$NEW_VERSIONS" >> $GITHUB_OUTPUT
-          echo "New versions found: $NEW_VERSIONS"
-        else
-          echo "new_versions_found=false" >> $GITHUB_OUTPUT
-          echo "No new versions found"
-        fi
-        
-    - name: Update script with new versions
-      if: steps.check-releases.outputs.new_versions_found == 'true'
-      run: |
-        NEW_VERSIONS="${{ steps.check-releases.outputs.versions }}"
-        
-        # Create backup
-        cp swift-syntax-compatibility-check.sh swift-syntax-compatibility-check.sh.bak
-        
-        # Read current ALL_VERSIONS array
-        CURRENT_VERSIONS=$(grep -A 20 "ALL_VERSIONS=(" swift-syntax-compatibility-check.sh | grep -o '"[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*"' | tr -d '"')
-        
-        # Combine and sort all versions
-        ALL_VERSIONS=$(echo -e "$CURRENT_VERSIONS\n$NEW_VERSIONS" | sort -V | uniq)
-        
-        # Build new array content
-        NEW_ARRAY="ALL_VERSIONS=(\n"
-        for version in $ALL_VERSIONS; do
-          NEW_ARRAY="$NEW_ARRAY  \"$version\"\n"
-        done
-        NEW_ARRAY="$NEW_ARRAY)"
-        
-        # Replace the ALL_VERSIONS array in the script
-        awk -v version_list="$(echo "$ALL_VERSIONS" | tr '\n' ' ')" '
-        /^ALL_VERSIONS=\(/ { 
-          print "ALL_VERSIONS=("
-          while (getline > 0 && !/^\)/) { }
-          split(version_list, version_array, " ")
-          for (i in version_array) {
-            if (version_array[i] != "") {
-              print "  \"" version_array[i] "\""
-            }
-          }
-          print ")"
-          next
-        }
-        { print }
-        ' swift-syntax-compatibility-check.sh.bak > swift-syntax-compatibility-check.sh
-        
-        # Update MAJOR_VERSIONS if needed (major versions are x.0.0)
-        MAJOR_VERSIONS=$(echo "$ALL_VERSIONS" | grep '\.0\.0$')
-        if [ -n "$MAJOR_VERSIONS" ]; then
-          awk -v version_list="$(echo "$MAJOR_VERSIONS" | tr '\n' ' ')" '
-          /^MAJOR_VERSIONS=\(/ { 
-            print "MAJOR_VERSIONS=("
-            while (getline > 0 && !/^\)/) { }
-            split(version_list, version_array, " ")
-            for (i in version_array) {
-              if (version_array[i] != "") {
-                print "  \"" version_array[i] "\""
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compute tracked swift-syntax versions
+        id: check-releases
+        run: |
+          set -euo pipefail
+
+          extract_array() {
+            local file="$1"
+            local array_name="$2"
+
+            awk -v array_name="$array_name" '
+              $0 ~ "^" array_name "=\\(" { in_array = 1; next }
+              in_array && /^\)/ { exit }
+              in_array && match($0, /"[^"]+"/) {
+                print substr($0, RSTART + 1, RLENGTH - 2)
               }
-            }
-            print ")"
-            next
+            ' "$file"
           }
-          { print }
-          ' swift-syntax-compatibility-check.sh > swift-syntax-compatibility-check.sh.tmp
-          mv swift-syntax-compatibility-check.sh.tmp swift-syntax-compatibility-check.sh
-        fi
-        
-        rm swift-syntax-compatibility-check.sh.bak
-        
-    - name: Create Pull Request
-      if: steps.check-releases.outputs.new_versions_found == 'true'
-      uses: peter-evans/create-pull-request@v6
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "Add new swift-syntax versions: ${{ steps.check-releases.outputs.versions }}"
-        title: "Update swift-syntax compatibility versions"
-        body: |
-          ## New swift-syntax versions detected
-          
-          This PR adds the following new swift-syntax versions:
-          ${{ steps.check-releases.outputs.versions }}
-          
-          ### Changes made:
-          - Updated `ALL_VERSIONS` array in `swift-syntax-compatibility-check.sh`
-          - Updated `MAJOR_VERSIONS` array if any new major versions (x.0.0) were added
-          
-          This PR was automatically created by the `update-swift-syntax-versions` workflow.
-        branch: update-swift-syntax-versions
-        delete-branch: true
+
+          RELEASES_JSON=$(curl -fsSL "https://api.github.com/repos/swiftlang/swift-syntax/releases")
+
+          # 601.0.0 is skipped because that release is missing the SwiftSyntax601 marker module.
+          STABLE_VERSIONS=$(echo "$RELEASES_JSON" | jq -r '
+            .[]
+            | select(.prerelease | not)
+            | .tag_name
+            | select(test("^[0-9]{3}\\.[0-9]+\\.[0-9]+$"))
+          ' | awk -F. '$1 >= 509 && $0 != "601.0.0" { print }' | sort -V)
+
+          STABLE_MAJORS=$(printf '%s\n' "$STABLE_VERSIONS" | awk -F. 'NF { print $1 }' | sort -nu)
+
+          PRERELEASE_CANDIDATES=$(echo "$RELEASES_JSON" | jq -r '
+            .[]
+            | select(.prerelease)
+            | .tag_name
+            | select(test("^[0-9]{3}\\.[0-9]+\\.[0-9]+-prerelease-[0-9]{4}-[0-9]{2}-[0-9]{2}$"))
+          ' | awk -F. '$1 >= 509 { print }' | sort -V)
+
+          PRERELEASE_VERSIONS=""
+          CURRENT_MAJOR=""
+          CURRENT_VERSION=""
+          while IFS= read -r version; do
+            [ -z "$version" ] && continue
+
+            major="${version%%.*}"
+            if printf '%s\n' "$STABLE_MAJORS" | grep -qx "$major"; then
+              continue
+            fi
+
+            if [ "$major" != "$CURRENT_MAJOR" ] && [ -n "$CURRENT_VERSION" ]; then
+              PRERELEASE_VERSIONS="${PRERELEASE_VERSIONS}${CURRENT_VERSION}"$'\n'
+            fi
+
+            CURRENT_MAJOR="$major"
+            CURRENT_VERSION="$version"
+          done <<< "$PRERELEASE_CANDIDATES"
+
+          if [ -n "$CURRENT_VERSION" ]; then
+            PRERELEASE_VERSIONS="${PRERELEASE_VERSIONS}${CURRENT_VERSION}"$'\n'
+          fi
+
+          PRERELEASE_VERSIONS=$(printf '%s' "$PRERELEASE_VERSIONS" | awk 'NF')
+
+          CURRENT_STABLE_VERSIONS=$(extract_array swift-syntax-compatibility-check.sh STABLE_VERSIONS | sort -V)
+          CURRENT_PRERELEASE_VERSIONS=$(extract_array swift-syntax-compatibility-check.sh PRERELEASE_VERSIONS | sort -V)
+
+          if [ "$STABLE_VERSIONS" = "$CURRENT_STABLE_VERSIONS" ] && [ "$PRERELEASE_VERSIONS" = "$CURRENT_PRERELEASE_VERSIONS" ]; then
+            echo "versions_changed=false" >> "$GITHUB_OUTPUT"
+            echo "No tracked swift-syntax version changes found"
+            exit 0
+          fi
+
+          PRERELEASE_DISPLAY="$PRERELEASE_VERSIONS"
+          if [ -z "$PRERELEASE_DISPLAY" ]; then
+            PRERELEASE_DISPLAY="(none)"
+          fi
+
+          {
+            echo "versions_changed=true"
+            echo "stable_versions<<EOF"
+            printf '%s\n' "$STABLE_VERSIONS"
+            echo "EOF"
+            echo "prerelease_versions<<EOF"
+            printf '%s\n' "$PRERELEASE_VERSIONS"
+            echo "EOF"
+            echo "prerelease_versions_display<<EOF"
+            printf '%s\n' "$PRERELEASE_DISPLAY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Stable versions:"
+          printf '%s\n' "$STABLE_VERSIONS"
+          echo "Prerelease heads:"
+          printf '%s\n' "$PRERELEASE_DISPLAY"
+
+      - name: Update script with tracked versions
+        if: steps.check-releases.outputs.versions_changed == 'true'
+        run: |
+          set -euo pipefail
+
+          STABLE_VERSIONS="${{ steps.check-releases.outputs.stable_versions }}"
+          PRERELEASE_VERSIONS="${{ steps.check-releases.outputs.prerelease_versions }}"
+
+          cp swift-syntax-compatibility-check.sh swift-syntax-compatibility-check.sh.bak
+
+          awk -v stable_versions="$STABLE_VERSIONS" -v prerelease_versions="$PRERELEASE_VERSIONS" '
+            function print_array(name, version_list, version_array, count, i) {
+              print name "=("
+              count = split(version_list, version_array, "\n")
+              for (i = 1; i <= count; i++) {
+                if (version_array[i] != "") {
+                  print "  \"" version_array[i] "\""
+                }
+              }
+              print ")"
+            }
+
+            /^STABLE_VERSIONS=\(/ {
+              print_array("STABLE_VERSIONS", stable_versions)
+              skipping = 1
+              next
+            }
+
+            /^PRERELEASE_VERSIONS=\(/ {
+              print_array("PRERELEASE_VERSIONS", prerelease_versions)
+              skipping = 1
+              next
+            }
+
+            skipping && /^\)/ {
+              skipping = 0
+              next
+            }
+
+            !skipping { print }
+          ' swift-syntax-compatibility-check.sh.bak > swift-syntax-compatibility-check.sh
+
+          rm swift-syntax-compatibility-check.sh.bak
+
+      - name: Create pull request
+        if: steps.check-releases.outputs.versions_changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update tracked swift-syntax versions"
+          title: "Update tracked swift-syntax versions"
+          body: |
+            ## Summary
+            - refresh the stable `swift-syntax` release list from upstream
+            - track the latest prerelease head for each unreleased major
+
+            ## Stable versions
+            ${{ steps.check-releases.outputs.stable_versions }}
+
+            ## Prerelease heads
+            ${{ steps.check-releases.outputs.prerelease_versions_display }}
+
+            This PR was automatically created by the `update-swift-syntax-versions` workflow.
+          branch: update-swift-syntax-versions
+          delete-branch: true
