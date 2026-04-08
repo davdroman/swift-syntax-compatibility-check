@@ -27,7 +27,7 @@ By using this action, you're taking a step towards being a **good citizen in the
 To use this action in your workflow, add the following step:
 
 ```yaml
-- name: Run Swift Syntax Compatibility Check
+- name: Check Swift Syntax Compatibility
   uses: davdroman/swift-syntax-compatibility-check@v1
 ```
 
@@ -39,9 +39,9 @@ jobs:
   check-swift-syntax-compatibility:
     runs-on: macos-latest
     steps:
-      - name: Checkout repository
+      - name: Git Checkout
         uses: actions/checkout@v5
-      - name: Run Swift Syntax Compatibility Check
+      - name: Check Swift Syntax Compatibility
         uses: davdroman/swift-syntax-compatibility-check@v1
 ```
 
@@ -135,7 +135,7 @@ jobs:
     steps:
       - name: Git Checkout
         uses: actions/checkout@v5
-      - name: Run Swift Syntax Compatibility Check
+      - name: Check Swift Syntax Compatibility
         uses: davdroman/swift-syntax-compatibility-check@v1
 ```
 
@@ -152,7 +152,7 @@ jobs:
     steps:
       - name: Git Checkout
         uses: actions/checkout@v5
-      - name: Run Swift Syntax Compatibility Check
+      - name: Check Swift Syntax Compatibility
         uses: davdroman/swift-syntax-compatibility-check@v1
         with:
           run-tests: true
