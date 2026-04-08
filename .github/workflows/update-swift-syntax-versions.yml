@@ -19,6 +19,8 @@ jobs:
 
       - name: Compute tracked swift-syntax versions
         id: check-releases
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -35,10 +37,8 @@ jobs:
             ' "$file"
           }
 
-          RELEASES_JSON=$(curl -fsSL "https://api.github.com/repos/swiftlang/swift-syntax/releases")
-
           # 601.0.0 is skipped because that release is missing the SwiftSyntax601 marker module.
-          STABLE_VERSIONS=$(echo "$RELEASES_JSON" | jq -r '
+          STABLE_VERSIONS=$(gh api --paginate "repos/swiftlang/swift-syntax/releases?per_page=100" --jq '
             .[]
             | select(.prerelease | not)
             | .tag_name
@@ -47,7 +47,7 @@ jobs:
 
           STABLE_MAJORS=$(printf '%s\n' "$STABLE_VERSIONS" | awk -F. 'NF { print $1 }' | sort -nu)
 
-          PRERELEASE_CANDIDATES=$(echo "$RELEASES_JSON" | jq -r '
+          PRERELEASE_CANDIDATES=$(gh api --paginate "repos/swiftlang/swift-syntax/releases?per_page=100" --jq '
             .[]
             | select(.prerelease)
             | .tag_name
