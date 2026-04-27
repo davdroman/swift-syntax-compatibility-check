@@ -120,9 +120,12 @@ jobs:
 
           STABLE_VERSIONS="${{ steps.check-releases.outputs.stable_versions }}"
           PRERELEASE_VERSIONS="${{ steps.check-releases.outputs.prerelease_versions }}"
+          STABLE_VERSIONS_FOR_AWK="${STABLE_VERSIONS//$'\n'/\\n}"
+          PRERELEASE_VERSIONS_FOR_AWK="${PRERELEASE_VERSIONS//$'\n'/\\n}"
 
           build_major_stable_versions() {
             local current_major=""
+            local current_version=""
             local major_stable_versions=""
             local version major
 
@@ -130,11 +133,17 @@ jobs:
               [ -z "$version" ] && continue
 
               major="${version%%.*}"
-              if [ "$major" != "$current_major" ]; then
-                major_stable_versions="${major_stable_versions}${version}"$'\n'
-                current_major="$major"
+              if [ "$major" != "$current_major" ] && [ -n "$current_version" ]; then
+                major_stable_versions="${major_stable_versions}${current_version}"$'\n'
               fi
+
+              current_major="$major"
+              current_version="$version"
             done <<< "$STABLE_VERSIONS"
+
+            if [ -n "$current_version" ]; then
+              major_stable_versions="${major_stable_versions}${current_version}"$'\n'
+            fi
 
             printf '%s' "$major_stable_versions" | awk 'NF'
           }
@@ -157,7 +166,12 @@ jobs:
 
           cp swift-syntax-compatibility-check.sh swift-syntax-compatibility-check.sh.bak
 
-          awk -v stable_versions="$STABLE_VERSIONS" -v prerelease_versions="$PRERELEASE_VERSIONS" '
+          awk -v stable_versions="$STABLE_VERSIONS_FOR_AWK" -v prerelease_versions="$PRERELEASE_VERSIONS_FOR_AWK" '
+            BEGIN {
+              gsub(/\\n/, "\n", stable_versions)
+              gsub(/\\n/, "\n", prerelease_versions)
+            }
+
             function print_array(name, version_list, version_array, count, i) {
               print name "=("
               count = split(version_list, version_array, "\n")

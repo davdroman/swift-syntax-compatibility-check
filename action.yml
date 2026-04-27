@@ -9,7 +9,7 @@ inputs:
     default: 'false'
 
   major-versions-only:
-    description: 'Whether to test only against major versions (true/false)'
+    description: 'Whether to test only the latest tracked release for each swift-syntax major version (true/false)'
     required: false
     default: 'false'
 

@@ -101,14 +101,21 @@ function build_major_stable_versions() {
   MAJOR_STABLE_VERSIONS=()
 
   local current_major=""
+  local current_version=""
   local version major
   for version in "${STABLE_VERSIONS[@]}"; do
     major="$(version_major "$version")"
-    if [ "$major" != "$current_major" ]; then
-      MAJOR_STABLE_VERSIONS+=("$version")
-      current_major="$major"
+    if [ "$major" != "$current_major" ] && [ -n "$current_version" ]; then
+      MAJOR_STABLE_VERSIONS+=("$current_version")
     fi
+
+    current_major="$major"
+    current_version="$version"
   done
+
+  if [ -n "$current_version" ]; then
+    MAJOR_STABLE_VERSIONS+=("$current_version")
+  fi
 }
 
 function infer_from_version_from_manifest() {
