@@ -81,10 +81,10 @@ For background on why prereleases are opt-in under SwiftPM, see:
 - `600.0.1`
 - `601.0.1`
 - `602.0.0`
-- `603.0.0`
+- `603.0.1`
 
 ### Optional tracked prereleases
-- `604.0.0-prerelease-2026-03-31`
+- `604.0.0-prerelease-2026-04-21`
 
 ### Default `major-versions-only` matrix
 - `509.0.0`
@@ -92,7 +92,7 @@ For background on why prereleases are opt-in under SwiftPM, see:
 - `600.0.0`
 - `601.0.1`
 - `602.0.0`
-- `603.0.0`
+- `603.0.1`
 <!-- END GENERATED VERSION MATRIX -->
 
 Set `include-prereleases: true` to append the tracked prereleases to either the full matrix or the `major-versions-only` matrix.
