@@ -81,6 +81,7 @@ For background on why prereleases are opt-in under SwiftPM, see:
 - `600.0.1`
 - `601.0.1`
 - `602.0.0`
+- `603.0.0`
 - `603.0.1`
 
 ### Optional tracked prereleases
