@@ -85,7 +85,7 @@ For background on why prereleases are opt-in under SwiftPM, see:
 - `603.0.1`
 
 ### Optional tracked prereleases
-- `604.0.0-prerelease-2026-04-21`
+- `604.0.0-prerelease-2026-06-05`
 
 ### Default `major-versions-only` matrix
 - `509.1.1`
