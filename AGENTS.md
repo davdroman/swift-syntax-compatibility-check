@@ -8,6 +8,7 @@ Repo-specific notes for agents:
 
 Release strategy:
 - Before creating release tags, pull the release branch with `git pull --ff-only --no-tags origin main` and verify the release tags point at the pulled `HEAD`.
+- For GitHub releases, match the existing release note format: title without the leading `v`, `## What's Changed`, concise user-facing bullets, and an exact patch-tag compare link such as `v1.2.0...v1.3.0`.
 - Treat changes to the tracked `swift-syntax` version matrix as minor releases, because they change the observable behavior of the action for consumers.
 - Use patch releases for fixes that do not change the action inputs or tracked compatibility matrix.
 - For each release, create the exact SemVer tag (for example `v1.1.0`) and the matching minor tag (for example `v1.1`).
