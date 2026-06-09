@@ -7,6 +7,7 @@ Repo-specific notes for agents:
 - `.github/workflows/update-swift-syntax-versions.yml` rewrites the tracked version arrays in `swift-syntax-compatibility-check.sh` and the generated version matrix block in `README.md`.
 
 Release strategy:
+- Before creating release tags, pull the release branch with `git pull --ff-only --no-tags origin main` and verify the release tags point at the pulled `HEAD`.
 - Treat changes to the tracked `swift-syntax` version matrix as minor releases, because they change the observable behavior of the action for consumers.
 - Use patch releases for fixes that do not change the action inputs or tracked compatibility matrix.
 - For each release, create the exact SemVer tag (for example `v1.1.0`) and the matching minor tag (for example `v1.1`).
