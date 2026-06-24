@@ -2,12 +2,13 @@
 
 # Swift Syntax Compatibility Check Script
 # Usage:
-# ./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--from-version <version>] [--verbose]
+# ./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--disable-prebuilts] [--from-version <version>] [--verbose]
 
 # Default input values
 RUN_TESTS=false
 MAJOR_VERSIONS_ONLY=false
 INCLUDE_PRERELEASES=false
+DISABLE_PREBUILTS=false
 FROM_VERSION=""
 VERBOSE=false
 FAILURE_OCCURRED=false
@@ -124,7 +125,7 @@ function infer_from_version_from_manifest() {
   fi
 
   local dump_package_output
-  if ! dump_package_output="$(swift package dump-package 2>/dev/null)"; then
+  if ! dump_package_output="$(swift package "${SWIFTPM_FLAGS[@]}" dump-package 2>/dev/null)"; then
     return 1
   fi
 
@@ -162,6 +163,7 @@ while [[ "$#" -gt 0 ]]; do
         --run-tests) RUN_TESTS=true ;;
         --major-versions-only) MAJOR_VERSIONS_ONLY=true ;;
         --include-prereleases) INCLUDE_PRERELEASES=true ;;
+        --disable-prebuilts) DISABLE_PREBUILTS=true ;;
         --from-version)
           shift
           if [ -z "${1:-}" ]; then
@@ -175,6 +177,16 @@ while [[ "$#" -gt 0 ]]; do
     esac
     shift
 done
+
+SWIFTPM_FLAGS=()
+if [ "$DISABLE_PREBUILTS" = true ]; then
+  SWIFTPM_FLAGS+=(--disable-experimental-prebuilts)
+fi
+
+VERBOSE_FLAGS=()
+if [ "$VERBOSE" = true ]; then
+  VERBOSE_FLAGS=(-v)
+fi
 
 # Stable swift-syntax versions to check.
 STABLE_VERSIONS=(
@@ -253,14 +265,8 @@ if [ -n "$FROM_VERSION" ]; then
   VERSIONS=("${FILTERED_VERSIONS[@]}")
 fi
 
-# Set verbosity flag
-VERBOSE_FLAG=""
-if [ "$VERBOSE" = true ]; then
-  VERBOSE_FLAG="-v"
-fi
-
 # Resolve package dependencies
-swift package resolve
+swift package "${SWIFTPM_FLAGS[@]}" resolve
 
 # Define color codes
 RED='\033[0;31m'
@@ -291,7 +297,7 @@ for version in "${VERSIONS[@]}"; do
   
   # Explain the resolve process
   echo -e "${BLUE}Resolving swift-syntax version $version and updating dependencies...${NC}"
-  if swift package resolve swift-syntax --version "$version"; then
+  if swift package "${SWIFTPM_FLAGS[@]}" resolve swift-syntax --version "$version"; then
     echo -e "${GREEN}Resolved swift-syntax version $version successfully${NC}"
   else
     echo -e "${RED}Failed to resolve swift-syntax version $version${NC}"
@@ -302,13 +308,13 @@ for version in "${VERSIONS[@]}"; do
 
   # Build the package
   echo -e "${BLUE}Building package with swift-syntax $version${NC}"
-  if swift build $VERBOSE_FLAG; then
+  if swift build "${SWIFTPM_FLAGS[@]}" "${VERBOSE_FLAGS[@]}"; then
     echo -e "${GREEN}Build succeeded for swift-syntax $version${NC}"
     
     # Run tests if specified
     if [ "$RUN_TESTS" = true ]; then
       echo -e "${BLUE}Running tests with swift-syntax $version${NC}"
-      if swift test $VERBOSE_FLAG; then
+      if swift test "${SWIFTPM_FLAGS[@]}" "${VERBOSE_FLAGS[@]}"; then
         echo -e "${GREEN}Tests passed for swift-syntax $version${NC}"
         SUCCEEDED_VERSIONS+=("$version")
         VERSION_SUCCEEDED=true
