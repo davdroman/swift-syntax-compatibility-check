@@ -18,6 +18,11 @@ inputs:
     required: false
     default: 'false'
 
+  disable-prebuilts:
+    description: 'Whether to pass --disable-experimental-prebuilts to SwiftPM (true/false)'
+    required: false
+    default: 'false'
+
   from-version:
     description: 'Check starting from this swift-syntax version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31); if empty, infer from the manifest when possible, otherwise use all selected versions'
     required: false
@@ -43,6 +48,9 @@ runs:
         fi
         if [ "${{ inputs.include-prereleases }}" = "true" ]; then
           args+=(--include-prereleases)
+        fi
+        if [ "${{ inputs.disable-prebuilts }}" = "true" ]; then
+          args+=(--disable-prebuilts)
         fi
         from_version="${{ inputs.from-version }}"
         if [ -n "$from_version" ]; then

@@ -52,6 +52,7 @@ jobs:
 | `run-tests`           | Whether to run tests (true/false)                             | false    | false   |
 | `major-versions-only` | Whether to test only against major versions (true/false)      | false    | false   |
 | `include-prereleases` | Whether to also test tracked `swift-syntax` prereleases       | false    | false   |
+| `disable-prebuilts`   | Whether to pass `--disable-experimental-prebuilts` to SwiftPM | false    | false   |
 | `from-version`        | Check starting from this `swift-syntax` version (e.g. 510.0.0 or 604.0.0-prerelease-2026-03-31). If omitted, infer from the manifest when possible. | false    |         |
 | `verbose`             | Whether to use verbose output for Swift commands (true/false) | false    | false   |
 
@@ -104,6 +105,8 @@ When `from-version` is omitted, the action tries to infer the direct `swift-synt
 
 When `from-version` is set, versions older than it are skipped after the base matrix is selected. Prerelease `from-version` values require `include-prereleases: true` unless the prerelease lower bound was inferred from the manifest.
 
+Set `disable-prebuilts: true` to pass `--disable-experimental-prebuilts` to SwiftPM during manifest inspection, dependency resolution, builds, and tests.
+
 ## Running the Script Locally
 
 If you'd like to run the compatibility check script locally without GitHub Actions, you can do so by executing the provided bash script [`swift-syntax-compatibility-check.sh`](swift-syntax-compatibility-check.sh) in your terminal.
@@ -111,7 +114,7 @@ If you'd like to run the compatibility check script locally without GitHub Actio
 ### Usage
 
 ```bash
-./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--from-version <version>] [--verbose]
+./swift-syntax-compatibility-check.sh [--run-tests] [--major-versions-only] [--include-prereleases] [--disable-prebuilts] [--from-version <version>] [--verbose]
 ```
 
 ### Script Overview
@@ -161,6 +164,7 @@ jobs:
           run-tests: true
           major-versions-only: false
           include-prereleases: true
+          disable-prebuilts: true
           from-version: '510.0.0'
           verbose: true
 ```
