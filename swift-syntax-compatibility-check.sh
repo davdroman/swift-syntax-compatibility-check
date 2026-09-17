@@ -206,13 +206,13 @@ STABLE_VERSIONS=(
   "603.0.0"
   "603.0.1"
   "603.0.2"
+  "604.0.0"
 )
 
 # Latest prerelease head for each unreleased major. These are opt-in because
 # most packages' normal dependency ranges do not admit prerelease versions.
 PRERELEASE_VERSIONS=(
-  "604.0.0-prerelease-2026-06-05"
-  "605.0.0-prerelease-2026-06-26"
+  "605.0.0-prerelease-2026-09-15"
 )
 
 build_major_stable_versions
